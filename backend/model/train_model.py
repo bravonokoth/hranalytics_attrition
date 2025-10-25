@@ -11,8 +11,10 @@ import pandas as pd
 
 DATA_PATH = "data/ibm_hr_attrition.csv"
 OUTPUT_PATH = "outputs/"
+MODEL_PATH = "model/"
 
 os.makedirs(OUTPUT_PATH, exist_ok=True)
+os.makedirs(MODEL_PATH, exist_ok=True)
 
 def train_model():
     X, y, encoders = load_and_prepare_data(DATA_PATH)
@@ -28,8 +30,8 @@ def train_model():
     conf_matrix = confusion_matrix(y_test, y_pred)
 
     # Save model + encoders
-    joblib.dump(model, "model/model.pkl")
-    joblib.dump(encoders, "model/encoder.pkl")
+    joblib.dump(model, os.path.join(MODEL_PATH, "model.pkl"))
+    joblib.dump(encoders, os.path.join(MODEL_PATH, "encoder.pkl"))
 
     # Save metrics
     with open(os.path.join(OUTPUT_PATH, "metrics.json"), "w") as f:
