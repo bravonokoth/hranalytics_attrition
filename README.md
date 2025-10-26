@@ -87,15 +87,10 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 
 ---
 
-## 🧠 Data & Model
 
-The ML model is trained on a **processed HR Attrition dataset**
-(Source: IBM HR Analytics Employee Attrition Dataset).
-It predicts likelihood of an employee **leaving or staying**, along with a confidence score.
+<p align="center">
+  <img src="./assets/ai.png" alt="App Screenshot" width="600"/>
+</p>
 
-Model file:
-
-```
-backend/model/
 ```
 
