@@ -1,11 +1,20 @@
 from fastapi import APIRouter
-import pandas as pd
-import json
 
-router = APIRouter(prefix="/analytics", tags=["Analytics"])
+router = APIRouter()
 
-@router.get("/metrics")
-def get_model_metrics():
-    with open("outputs/metrics.json", "r") as f:
-        metrics = json.load(f)
-    return metrics
+@router.get("/dashboard")
+def dashboard():
+    return {
+        "totalEmployees": 50,
+        "attritionRate": 0.12,
+        "averageAge": 32.5,
+        "averageSalary": 65000,
+        "jobSatisfaction": 4.1,
+    }
+
+@router.get("/department")
+def by_department():
+    return [
+        {"department": "IT", "count": 20, "attritionRate": 0.1},
+        {"department": "HR", "count": 10, "attritionRate": 0.2},
+    ]
