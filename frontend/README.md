@@ -75,7 +75,7 @@ frontend/
 
 ### 1️⃣ Clone the repo
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/bravonokoth/hranalytics_attrition.git
 cd frontend
 ````
 
