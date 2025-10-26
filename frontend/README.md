@@ -159,4 +159,6 @@ You can add frontend integration tests using:
 npm run test
 ```
 
-![alt text](image.png)
+<p align="center">
+  <img src="./assets/ai.png" alt="App Screenshot" width="600"/>
+</p>
