@@ -159,3 +159,4 @@ You can add frontend integration tests using:
 npm run test
 ```
 
+![alt text](image.png)
