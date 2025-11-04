@@ -108,36 +108,39 @@ except Exception as e:
 
 
 class EmployeePredictionInput(BaseModel):
+    # Required fields (most important for prediction)
     age: int
-    business_travel: str
-    daily_rate: Optional[int] = 800
-    department: str
+    department: str = "Research & Development"
+    job_role: str = "Software Engineer"
+    monthly_income: int = 50000
+    
+    # Optional fields with sensible defaults
+    business_travel: str = "Travel_Rarely"
+    daily_rate: int = 800
     distance_from_home: int = 10
-    education: int
+    education: int = 3
     education_field: str = "Life Sciences"
-    environment_satisfaction: int
+    environment_satisfaction: int = 3
     gender: str = "Male"
-    hourly_rate: Optional[int] = 65
+    hourly_rate: int = 65
     job_involvement: int = 3
     job_level: int = 2
-    job_role: str
-    job_satisfaction: int
+    job_satisfaction: int = 3
     marital_status: str = "Single"
-    monthly_income: int
-    monthly_rate: Optional[int] = 22000
+    monthly_rate: int = 22000
     num_companies_worked: int = 1
     over_time: str = "No"
-    percent_salary_hike: Optional[int] = 14
-    performance_rating: Optional[int] = 3
+    percent_salary_hike: int = 14
+    performance_rating: int = 3
     relationship_satisfaction: int = 3
     stock_option_level: int = 1
-    total_working_years: int
+    total_working_years: int = 5
     training_times_last_year: int = 3
-    work_life_balance: int
-    years_at_company: int
-    years_in_current_role: int
+    work_life_balance: int = 3
+    years_at_company: int = 5
+    years_in_current_role: int = 3
     years_since_last_promotion: int = 0
-    years_with_curr_manager: int
+    years_with_curr_manager: int = 3
 
 
 class PredictionResponse(BaseModel):
