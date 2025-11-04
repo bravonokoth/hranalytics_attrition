@@ -6,3 +6,45 @@ __pycache__/
 .env
 .venv/
 outputs/
+
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.mypy_cache/
+.pytest_cache/
+.dmypy.json
+
+# Database
+hranalytics.db
+*.sqlite3
+
+# Secrets
+.env
+.env.local
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints
+
+# ML files
+model/*.pkl
+outputs/

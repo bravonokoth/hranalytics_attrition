@@ -158,7 +158,3 @@ You can add frontend integration tests using:
 ```bash
 npm run test
 ```
-
-<p align="center">
-  <img src="./assets/ai.png" alt="App Screenshot" width="600"/>
-</p>

@@ -80,7 +80,7 @@ Expected output (simplified):
 📊 Accuracy:      0.871 → Model correctly predicts 87.1% of cases
 🎯 Precision:     0.864 → How often predictions were right when it said 'leaving'
 🔁 Recall:        0.852 → How many actual leavers it caught
-⚖️  F1-Score:      0.858 → Overall performance balance
+⚖️  F1-Score:     0.858 → Overall performance balance
 ✅ Model training completed successfully.
 ```
 

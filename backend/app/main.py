@@ -33,3 +33,11 @@ app.include_router(predict.router, prefix="/api/predict", tags=["Prediction"])
 @app.get("/")
 def root():
     return {"message": "Welcome to HR Analytics Attrition API"}
+
+
+from app.db.engine import create_db_and_tables
+
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
+    print("Database tables ready!")
