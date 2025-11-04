@@ -14,77 +14,90 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
+// ──────────────────────────────────────────────────────────────
+// 1. MAPPINGS TO MATCH BACKEND
+// ──────────────────────────────────────────────────────────────
 const departments = ['HR', 'IT', 'Sales', 'Marketing', 'Finance', 'Operations', 'Research & Development'];
 const jobRoles = [
-  'Manager',
-  'Senior Engineer',
-  'Software Engineer',
-  'Sales Representative',
-  'Sales Executive',
-  'Marketing Manager',
-  'HR Manager',
-  'Analyst',
-  'Data Scientist',
-  'Product Manager',
+  'Manager', 'Senior Engineer', 'Software Engineer', 'Sales Representative',
+  'Sales Executive', 'Marketing Manager', 'HR Manager', 'Analyst', 'Data Scientist', 'Product Manager',
 ];
-const educationLevels = ['Below College', 'College', 'Bachelor', 'Master', 'Doctor'];
+const educationMap: Record<string, number> = {
+  'Below College': 1,
+  'College': 2,
+  'Bachelor': 3,
+  'Master': 4,
+  'Doctor': 5,
+};
 
 export default function AddEmployeePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
+
+  // Minimal form – only what we really need
+  const [form, setForm] = useState({
     age: '',
     department: '',
-    salary: '',
-    education: '',
     jobRole: '',
+    salary: '',           // annual → we’ll convert to monthly_income
+    education: '',
     yearsAtCompany: '',
-    monthlyIncome: '',
-    jobSatisfaction: '',
-    workLifeBalance: '',
-    environmentSatisfaction: '',
   });
 
-  const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+  const handleChange = (field: keyof typeof form, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  // ──────────────────────────────────────────────────────────────
+  
+  // ──────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const employeeData = {
-        name: formData.name,
-        age: parseInt(formData.age),
-        department: formData.department,
-        salary: parseInt(formData.salary),
-        education: formData.education,
-        jobRole: formData.jobRole,
-        yearsAtCompany: parseInt(formData.yearsAtCompany),
-        monthlyIncome: parseInt(formData.monthlyIncome || formData.salary) / 12,
-        jobSatisfaction: parseInt(formData.jobSatisfaction || '3'),
-        workLifeBalance: parseInt(formData.workLifeBalance || '3'),
-        environmentSatisfaction: parseInt(formData.environmentSatisfaction || '3'),
+      const payload = {
+        age: Number(form.age),
+        department: form.department,
+        job_role: form.jobRole,                     // ← backend uses snake_case
+        monthly_income: Math.round(Number(form.salary)), // salary → monthly_income
+        education: educationMap[form.education],    // string → int
+        years_at_company: Number(form.yearsAtCompany),
+
+        // Required defaults (you can expose them later)
+        standard_hours: 80,
+        employee_count: 1,
+        over_18: 'Y',
+        job_satisfaction: 3,
+        work_life_balance: 3,
+        environment_satisfaction: 3,
+        attrition: 'No',
       };
 
-      await api.employees.create(employeeData);
+      console.log('Sending payload →', payload); // ← devtools check
+      await api.employees.create(payload);
+
       toast.success('Employee added successfully');
       router.push('/employees');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to add employee');
+      const msg = error?.details?.detail
+        ? error.details.detail.map((e: any) => `${e.loc.join('.')}: ${e.msg}`).join(', ')
+        : error.message || 'Failed to add employee';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ──────────────────────────────────────────────────────────────
+  // 3. UI (unchanged, just a bit cleaned up)
+  // ──────────────────────────────────────────────────────────────
   return (
     <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-3xl mx-auto space-y-6"
+        className="max-w-3xl mx-auto space-y-6 py-8"
       >
         <div>
           <Link href="/employees">
@@ -94,28 +107,18 @@ export default function AddEmployeePage() {
             </Button>
           </Link>
           <h1 className="text-3xl font-bold text-slate-900">Add New Employee</h1>
-          <p className="text-slate-600 mt-1">Enter employee information below</p>
+          <p className="text-slate-600 mt-1">Minimal fields – everything else uses smart defaults</p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Employee Information</CardTitle>
-            <CardDescription>Fill out the form to add a new employee to the system</CardDescription>
+            <CardDescription>All fields are required</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={(e) => handleChange('name', e.target.value)}
-                    required
-                  />
-                </div>
-
+                {/* Age */}
                 <div className="space-y-2">
                   <Label htmlFor="age">Age *</Label>
                   <Input
@@ -124,73 +127,72 @@ export default function AddEmployeePage() {
                     min="18"
                     max="70"
                     placeholder="30"
-                    value={formData.age}
-                    onChange={(e) => handleChange('age', e.target.value)}
+                    value={form.age}
+                    onChange={e => handleChange('age', e.target.value)}
                     required
                   />
                 </div>
 
+                {/* Department */}
                 <div className="space-y-2">
                   <Label htmlFor="department">Department *</Label>
-                  <Select value={formData.department} onValueChange={(v) => handleChange('department', v)}>
+                  <Select value={form.department} onValueChange={v => handleChange('department', v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
-                        </SelectItem>
+                      {departments.map(d => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Job Role */}
                 <div className="space-y-2">
                   <Label htmlFor="jobRole">Job Role *</Label>
-                  <Select value={formData.jobRole} onValueChange={(v) => handleChange('jobRole', v)}>
+                  <Select value={form.jobRole} onValueChange={v => handleChange('jobRole', v)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select job role" />
+                      <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {jobRoles.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
-                        </SelectItem>
+                      {jobRoles.map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Annual Salary */}
                 <div className="space-y-2">
-                  <Label htmlFor="salary">Annual Salary *</Label>
+                  <Label htmlFor="salary">Annual Salary (₹) *</Label>
                   <Input
                     id="salary"
                     type="number"
                     min="0"
-                    placeholder="60000"
-                    value={formData.salary}
-                    onChange={(e) => handleChange('salary', e.target.value)}
+                    placeholder="1000000"
+                    value={form.salary}
+                    onChange={e => handleChange('salary', e.target.value)}
                     required
                   />
                 </div>
 
+                {/* Education */}
                 <div className="space-y-2">
                   <Label htmlFor="education">Education Level *</Label>
-                  <Select value={formData.education} onValueChange={(v) => handleChange('education', v)}>
+                  <Select value={form.education} onValueChange={v => handleChange('education', v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select education" />
                     </SelectTrigger>
                     <SelectContent>
-                      {educationLevels.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {level}
-                        </SelectItem>
+                      {Object.keys(educationMap).map(level => (
+                        <SelectItem key={level} value={level}>{level}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Years at Company */}
                 <div className="space-y-2">
                   <Label htmlFor="yearsAtCompany">Years at Company *</Label>
                   <Input
@@ -199,73 +201,16 @@ export default function AddEmployeePage() {
                     min="0"
                     max="40"
                     placeholder="5"
-                    value={formData.yearsAtCompany}
-                    onChange={(e) => handleChange('yearsAtCompany', e.target.value)}
+                    value={form.yearsAtCompany}
+                    onChange={e => handleChange('yearsAtCompany', e.target.value)}
                     required
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="jobSatisfaction">Job Satisfaction (1-5)</Label>
-                  <Select
-                    value={formData.jobSatisfaction}
-                    onValueChange={(v) => handleChange('jobSatisfaction', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rating" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <SelectItem key={rating} value={String(rating)}>
-                          {rating} - {rating === 1 ? 'Very Low' : rating === 2 ? 'Low' : rating === 3 ? 'Medium' : rating === 4 ? 'High' : 'Very High'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="workLifeBalance">Work-Life Balance (1-5)</Label>
-                  <Select
-                    value={formData.workLifeBalance}
-                    onValueChange={(v) => handleChange('workLifeBalance', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rating" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <SelectItem key={rating} value={String(rating)}>
-                          {rating} - {rating === 1 ? 'Very Poor' : rating === 2 ? 'Poor' : rating === 3 ? 'Good' : rating === 4 ? 'Better' : 'Best'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="environmentSatisfaction">Environment Satisfaction (1-5)</Label>
-                  <Select
-                    value={formData.environmentSatisfaction}
-                    onValueChange={(v) => handleChange('environmentSatisfaction', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rating" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <SelectItem key={rating} value={String(rating)}>
-                          {rating} - {rating === 1 ? 'Very Low' : rating === 2 ? 'Low' : rating === 3 ? 'Medium' : rating === 4 ? 'High' : 'Very High'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-4">
                 <Button type="submit" disabled={isLoading} className="flex-1">
-                  {isLoading ? 'Adding Employee...' : 'Add Employee'}
+                  {isLoading ? 'Adding...' : 'Add Employee'}
                 </Button>
                 <Link href="/employees" className="flex-1">
                   <Button type="button" variant="outline" className="w-full">

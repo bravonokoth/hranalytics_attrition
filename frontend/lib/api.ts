@@ -50,6 +50,10 @@ async function fetchApi<T>(
     }
 
     if (!response.ok) {
+      // Enhanced error handling for 422 errors
+      if (response.status === 422) {
+        console.error('Validation error details:', data);
+      }
       throw new ApiError(
         response.status,
         data?.detail || data?.message || data?.error || 'An error occurred',
@@ -110,17 +114,22 @@ export const api = {
       if (params?.limit) queryParams.append('limit', String(params.limit));
 
       const query = queryParams.toString();
-      return fetchApi<Employee[]>(`/employees${query ? `?${query}` : ''}`);
+      // Fixed: Always use trailing slash
+      return fetchApi<Employee[]>(`/employees/${query ? `?${query}` : ''}`);
     },
     
     get: (id: number | string) => 
       fetchApi<Employee>(`/employees/${id}`),
     
-    create: (data: EmployeeCreate) =>
-      fetchApi<Employee>('/employees', {
+    create: (data: EmployeeCreate) => {
+      // Log the data being sent for debugging
+      console.log('Creating employee with data:', data);
+      
+      return fetchApi<Employee>('/employees/', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+      });
+    },
     
     update: (id: number | string, data: Partial<Employee>) =>
       fetchApi<Employee>(`/employees/${id}`, {
@@ -193,6 +202,14 @@ export const api = {
 // Utility function to handle API errors in components
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
+    // For 422 errors, provide more detailed feedback
+    if (error.status === 422 && error.details?.detail) {
+      if (Array.isArray(error.details.detail)) {
+        return error.details.detail.map((err: any) => 
+          `${err.loc?.join('.')}: ${err.msg}`
+        ).join(', ');
+      }
+    }
     return error.message;
   }
   if (error instanceof Error) {

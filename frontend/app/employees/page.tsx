@@ -7,113 +7,97 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { api } from '@/lib/api';
 import { motion } from 'framer-motion';
-import { Search, Plus, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { Search, Plus, Eye, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
+// ────── MATCH BACKEND EXACTLY ──────
 interface Employee {
-  id: string;
-  name: string;
+  id: number;
   age: number;
   department: string;
-  salary: number;
-  jobRole: string;
-  attrition: boolean;
-  yearsAtCompany: number;
+  job_role: string;
+  monthly_income: number;
+  education: number;
+  years_at_company: number;
+  attrition: string | null;
+  job_satisfaction?: number;
+  work_life_balance?: number;
+  environment_satisfaction?: number;
 }
+
+const educationLabels: Record<number, string> = {
+  1: 'Below College',
+  2: 'College',
+  3: 'Bachelor',
+  4: 'Master',
+  5: 'Doctor',
+};
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [attritionFilter, setAttritionFilter] = useState('all');
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [filtered, setFiltered] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [deptFilter, setDeptFilter] = useState('all');
+  const [attrFilter, setAttrFilter] = useState('all');
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
+  // Load once
   useEffect(() => {
-    loadEmployees();
+    api.employees.list({ limit: 200 })
+      .then(data => {
+        setEmployees(data);
+        setFiltered(data);
+      })
+      .catch(() => toast.error('Failed to load employees'))
+      .finally(() => setLoading(false));
   }, []);
 
+  // Filter live
   useEffect(() => {
-    filterEmployees();
-  }, [searchQuery, departmentFilter, attritionFilter, employees]);
+    let list = [...employees];
 
-  const loadEmployees = async () => {
-    try {
-      const data = await api.employees.list();
-      setEmployees(data);
-      setFilteredEmployees(data);
-    } catch (error) {
-      toast.error('Failed to load employees');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filterEmployees = () => {
-    let filtered = [...employees];
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (emp) =>
-          emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          emp.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          emp.jobRole.toLowerCase().includes(searchQuery.toLowerCase())
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(e =>
+        e.job_role?.toLowerCase().includes(q) ||
+        e.department?.toLowerCase().includes(q)
       );
     }
 
-    if (departmentFilter !== 'all') {
-      filtered = filtered.filter((emp) => emp.department === departmentFilter);
-    }
+    if (deptFilter !== 'all') list = list.filter(e => e.department === deptFilter);
+    if (attrFilter !== 'all') list = list.filter(e => (e.attrition === 'Yes') === (attrFilter === 'yes'));
 
-    if (attritionFilter !== 'all') {
-      const isAttrition = attritionFilter === 'yes';
-      filtered = filtered.filter((emp) => emp.attrition === isAttrition);
-    }
+    setFiltered(list);
+  }, [search, deptFilter, attrFilter, employees]);
 
-    setFilteredEmployees(filtered);
-  };
-
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.employees.delete(id);
-      toast.success('Employee deleted successfully');
-      loadEmployees();
-    } catch (error) {
-      toast.error('Failed to delete employee');
+      await api.employees.delete(deleteId);
+      toast.success('Employee deleted');
+      setEmployees(prev => prev.filter(e => e.id !== deleteId));
+    } catch {
+      toast.error('Delete failed');
     } finally {
       setDeleteId(null);
     }
   };
 
-  const departments = Array.from(new Set(employees.map((e) => e.department)));
+  const departments = Array.from(new Set(employees.map(e => e.department))).sort();
 
-  if (isLoading) {
+  const formatSalary = (n: number) => `$${Number(n).toLocaleString()}`;
+
+  if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
       </DashboardLayout>
     );
@@ -122,116 +106,100 @@ export default function EmployeesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Employees</h1>
-            <p className="text-slate-600 mt-1">Manage your workforce</p>
+            <h1 className="text-3xl font-bold">Employees</h1>
+            <p className="text-slate-600">Manage your workforce</p>
           </div>
           <Link href="/employees/add">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Employee
-            </Button>
+            <Button><Plus className="w-4 h-4 mr-2" />Add Employee</Button>
           </Link>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Employee Directory</CardTitle>
+            <CardTitle>Directory</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            {/* Filters */}
+            <div className="grid gap-3 md:grid-cols-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                 <Input
-                  placeholder="Search employees..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search role / dept..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
                   className="pl-10"
                 />
               </div>
-
-              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by department" />
-                </SelectTrigger>
+              <Select value={deptFilter} onValueChange={setDeptFilter}>
+                <SelectTrigger><SelectValue placeholder="Department" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
+                  {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
               </Select>
-
-              <Select value={attritionFilter} onValueChange={setAttritionFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
+              <Select value={attrFilter} onValueChange={setAttrFilter}>
+                <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="no">Active</SelectItem>
                   <SelectItem value="yes">Left</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {filteredEmployees.length === 0 ? (
+            {/* Table */}
+            {filtered.length === 0 ? (
               <div className="text-center py-12">
-                <UserPlus className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No employees found</h3>
-                <p className="text-slate-600 mb-4">
-                  {searchQuery || departmentFilter !== 'all' || attritionFilter !== 'all'
-                    ? 'Try adjusting your filters'
-                    : 'Get started by adding your first employee'}
-                </p>
-                <Link href="/employees/add">
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Employee
-                  </Button>
-                </Link>
+                <p className="text-slate-500">No employees found</p>
               </div>
             ) : (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto border rounded-lg">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Department</TableHead>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Dept</TableHead>
                       <TableHead>Age</TableHead>
                       <TableHead>Salary</TableHead>
+                      <TableHead>Tenure</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEmployees.map((employee, index) => (
+                    {filtered.map((e, i) => (
                       <motion.tr
-                        key={employee.id}
+                        key={e.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="hover:bg-slate-50"
+                        transition={{ delay: i * 0.03 }}
                       >
-                        <TableCell className="font-medium">{employee.name}</TableCell>
-                        <TableCell>{employee.department}</TableCell>
-                        <TableCell>{employee.age}</TableCell>
-                        <TableCell>${employee.salary.toLocaleString()}</TableCell>
+                        <TableCell>#{e.id}</TableCell>
+                        <TableCell>{e.job_role || '—'}</TableCell>
+                        <TableCell>{e.department}</TableCell>
+                        <TableCell>{e.age}</TableCell>
+                        <TableCell className="font-medium">
+                          {formatSalary(e.monthly_income)}
+                        </TableCell>
+                        <TableCell>{e.years_at_company ?? 0} yrs</TableCell>
                         <TableCell>
-                          <Badge variant={employee.attrition ? 'destructive' : 'default'}>
-                            {employee.attrition ? 'Left' : 'Active'}
+                          <Badge variant={e.attrition === 'Yes' ? 'destructive' : 'default'}>
+                            {e.attrition === 'Yes' ? 'Left' : 'Active'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Link href={`/employees/${employee.id}`}>
-                              <Button variant="ghost" size="icon">
-                                <Eye className="w-4 h-4" />
-                              </Button>
+                          <div className="flex justify-end gap-1">
+                            <Link href={`/employees/${e.id}`}>
+                              <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
                             </Link>
-                            <Button variant="ghost" size="icon" onClick={() => setDeleteId(employee.id)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteId(e.id)}
+                            >
                               <Trash2 className="w-4 h-4 text-red-600" />
                             </Button>
                           </div>
@@ -244,26 +212,24 @@ export default function EmployeesPage() {
             )}
 
             <div className="text-sm text-slate-600">
-              Showing {filteredEmployees.length} of {employees.length} employees
+              Showing {filtered.length} of {employees.length}
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Delete Confirm */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Employee?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the employee record from the
-              system.
+              This action is permanent.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteId && handleDelete(deleteId)}>
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
