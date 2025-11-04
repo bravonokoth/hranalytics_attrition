@@ -1,0 +1,38 @@
+// lib/encoders.ts
+export const encoders = {
+  business_travel: { "Non-Travel": 0, "Travel_Rarely": 1, "Travel_Frequently": 2 },
+  department: {
+    "Sales": 0,
+    "Research & Development": 1,
+    "Human Resources": 2,
+    "IT": 3,
+    "Finance": 4,
+    "Marketing": 5,
+    "Operations": 6,
+  },
+  education_field: {
+    "Life Sciences": 0,
+    "Medical": 1,
+    "Marketing": 2,
+    "Technical Degree": 3,
+    "Other": 4,
+    "Human Resources": 5,
+  },
+  gender: { "Female": 0, "Male": 1 },
+  job_role: {
+    "Sales Executive": 0,
+    "Research Scientist": 1,
+    "Laboratory Technician": 2,
+    "Manufacturing Director": 3,
+    "Healthcare Representative": 4,
+    "Manager": 5,
+    "Sales Representative": 6,
+    "Research Director": 7,
+    "Human Resources": 8,
+    "Senior Engineer": 9,
+    "Software Engineer": 10,
+    "Marketing Manager": 11,
+  },
+  marital_status: { "Single": 0, "Married": 1, "Divorced": 2 },
+  over_time: { "No": 0, "Yes": 1 },
+};
