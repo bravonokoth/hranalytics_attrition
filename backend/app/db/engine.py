@@ -1,15 +1,22 @@
-from sqlmodel import SQLModel, create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlmodel import create_engine, SQLModel
+import os
 
-DATABASE_URL = "sqlite:///./hr.db"
-engine = create_engine(DATABASE_URL, echo=False, future=True)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./hranalytics.db")
 
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+# Create engine with echo for debugging
+engine = create_engine(
+    DATABASE_URL, 
+    echo=True,
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+)
 
-def get_session():
-    with SessionLocal() as session:
-        yield session
-
-# ← THIS LINE WAS MISSING
 def create_db_and_tables():
+    """Create all database tables"""
+    # Import all models to ensure they're registered with SQLModel
+    from app.models.user import User
+    from app.models.employee import Employee
+    from app.models.model import Model
+    from app.models.prediction import Prediction
+    
+    # Create all tables
     SQLModel.metadata.create_all(engine)
